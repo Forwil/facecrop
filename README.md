@@ -7,3 +7,6 @@
 + opencv2
 + python 2.7+
 
+快速安装
+{{sudo apt-get install python2.7 libopencv\* python-webpy python-opencv}}
+
