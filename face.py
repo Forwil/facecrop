@@ -4,7 +4,7 @@ import sys
 
 filedir = './static'
 
-def getMark(name,wid = 413,hei = 295 ,color_id = 2):
+def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	if color_id == 0:
 		color = (255,255,255)
 	if color_id == 1:
@@ -70,7 +70,7 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2):
 
 		img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
 		img3 = cv2.resize(img2,(hei,wid))
-		img4 = join(img3)
+		img4 = join(img3,rotate)
 		file_name = filedir + "/out_" + str(count) + "_" + name
 		cv2.imwrite(file_name,img4)
 		name_list.append(file_name)
@@ -80,9 +80,13 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2):
 
 	return name_list
 
-def join(img):
+def join(img,rotate):
 	width = 1795
 	height = 1205
+	if rotate == 1:
+		tmp = width
+		width = height
+		height = tmp
 	sub_height = img.shape[0]
 	sub_width = img.shape[1]
 	print img.shape
