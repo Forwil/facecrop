@@ -1,6 +1,7 @@
 import web
 import cv2
 import face
+import json
 
 urls = ('/upload', 'Upload')
 urls = ('/', 'Upload')
@@ -35,8 +36,8 @@ class Upload:
             if 'color' in x:
                 color = int(x.color)
             outfile = face.getMark(filename,height,width,color)
-
-        return render.upload(outfile)
+#        return render.upload(outfile)
+        return json.dumps(outfile)
 
 if __name__ == "__main__":
    app = web.application(urls, globals()) 
