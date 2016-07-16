@@ -39,8 +39,8 @@ class Upload:
             if 'rotate' in x:
                 rotate = int(x.rotate)
             outfile = face.getMark(filename,height,width,color,rotate)
-        return render.upload(outfile)
-#        return json.dumps(outfile)
+#        return render.upload(outfile)
+        return json.dumps(outfile)
 
 if __name__ == "__main__":
    app = web.application(urls, globals()) 
