@@ -1,10 +1,23 @@
 $def with(src)
-<html><head></head><body>
-<form method="POST" enctype="multipart/form-data" action="">
-<input type="file" name="myfile" />
-<br/>
-<input type="submit" />
-</form>
-$for i in src:
-    <img src="$i" />
-</body></html>
+<html>
+	<head>
+	</head>
+	<body>
+		<form method="POST" enctype="multipart/form-data" action="">
+			<input type="file" name="myfile" />
+			<br/>
+			长：<input type="text" name="height" value="413"/>
+			宽：<input type="text" name="width" value="295"/>
+			<select name="color"style="width:200px" >
+				<option value="0" style="width:200px">白底</option>
+				<option value="1" style="width:200px">红底</option>
+				<option value="2" style="width:200px">蓝底</option>
+			</select>
+			<br/>
+			<input type="submit" />
+		</form>
+		$for i in src:
+			<img src="$i" />
+			<br/>
+	</body>
+</html>

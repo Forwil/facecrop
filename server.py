@@ -3,6 +3,7 @@ import cv2
 import face
 
 urls = ('/upload', 'Upload')
+urls = ('/', 'Upload')
 render = web.template.render('templates/',)
 
 filedir = './static' 
@@ -18,10 +19,22 @@ class Upload:
         if 'myfile' in x: # to check if the file-object is created
             filepath = x.myfile.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename = filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
-            fout = open(filedir +'/'+ filename,'wb') # creates the file where the uploaded file should be stored
+            try:
+                fout = open(filedir +'/'+ filename,'wb') # creates the file where the uploaded file should be stored
+            except:
+                return render.upload("")
             fout.write(x.myfile.file.read()) # writes the uploaded file to the newly created file.
             fout.close() # closes the file, upload complete.
-            outfile = face.getMark(filename)
+            height = 413
+            width = 295
+            color = 2
+            if 'height' in x:
+                height = int(x.height)
+            if 'width' in x:
+                width = int(x.width)
+            if 'color' in x:
+                color = int(x.color)
+            outfile = face.getMark(filename,height,width,color)
 
         return render.upload(outfile)
 
