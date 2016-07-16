@@ -8,7 +8,7 @@
 + python 2.7+
 
 快速安装
-	`sudo apt-get install python2.7 libopencv\* python-webpy python-opencv`
+	`sudo apt-get install python2.7 libopencv* python-webpy python-opencv`
 
 运行
 	`python server.py`
