@@ -9,6 +9,13 @@ render = web.template.render('templates/',)
 
 filedir = './static' 
 
+def makeMap(outfile):
+    m = {}
+    if len(outfile) == 2:
+        m["singleImage"] = outfile[1]
+        m["printImage"] = outfile[0]
+    return json.dumps(m)
+
 class Upload:
 
     def GET(self):
@@ -40,7 +47,7 @@ class Upload:
                 rotate = int(x.rotate)
             outfile = face.getMark(filename,height,width,color,rotate)
 #        return render.upload(outfile)
-        return json.dumps(outfile)
+        return makeMap(outfile) 
 
 if __name__ == "__main__":
    app = web.application(urls, globals()) 

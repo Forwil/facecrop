@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import sys
+import time
 
 filedir = './static'
 
@@ -64,7 +65,7 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 		minSize=(30, 30),
 		flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 	)
-	
+
 	print "Found {0} faces!".format(len(faces))
 	name_list = []
 	count = 0
@@ -93,17 +94,22 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 		new_h = bottom - top
 
 		rectf = (new_x,new_y,new_w,new_h)
-	
+		print "init mask" + str(time.time())	
 		mask_img_read = cv2.imread("./mask.bmp")
+		print "read mask done" + str(time.time())	
 		mask_img = cv2.resize(mask_img_read,(image.shape[1],image.shape[0]))
+		print "resize mask done" + str(time.time())	
 		mask = drawMark(mask_img,(x,y,w,h))
+		print "init mask done" + str(time.time())	
 #		show(mask)
 #		cv2.imwrite("mask.jpg",mask)
 
 		bgdModel = np.zeros((1,65),np.float64)
 		fgdModel = np.zeros((1,65),np.float64)      
 
+		print "start cut" + str(time.time())	
 		cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
+		print "end cut" + str(time.time())	
 
 		bg = np.zeros(image.shape,np.uint8)
 		mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
@@ -115,13 +121,17 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 
 		img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
 		img3 = cv2.resize(img2,(hei,wid))
+#		kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
+#		img3 = cv2.dilate(img3,kernel)
+		img3 = cv2.medianBlur(img3,3)
 		img4 = join(img3,rotate)
-		file_name = filedir + "/out_" + str(count) + "_" + name
+		file_name = filedir + "/out_" + str(count) + "_" + str(time.time()) + name
 		cv2.imwrite(file_name,img4)
 		name_list.append(file_name)
 		file_name = filedir + "/out_" + str(count) + "_single_" + name
 		cv2.imwrite(file_name,img3)
 		name_list.append(file_name)
+		print "end all" + str(time.time())	
 
 	return name_list
 
