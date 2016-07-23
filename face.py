@@ -4,6 +4,46 @@ import sys
 
 filedir = './static'
 
+
+def show(mask):
+	for i in range(0,mask.shape[0]):
+		for j in range(0,mask.shape[1]):
+			if mask[i][j] == cv2.GC_PR_FGD:
+				mask[i][j] = 200
+			if mask[i][j] == cv2.GC_FGD:
+				mask[i][j] = 255
+			if mask[i][j] == cv2.GC_PR_BGD:
+				mask[i][j] = 100
+			if mask[i][j] == cv2.GC_BGD:
+				mask[i][j] = 0
+
+def compare(a,b):
+	return a[0] == b[0] and a[1] == b[1] and a[2] == b[2]
+
+def drawMark(image,rectf):
+	x,y,w,h = rectf	
+	pad = image.shape[1] / 50
+	scale = 1.0 / 8
+	x = x + int(w * scale)
+	y = y + int(h * scale)
+	w = int(w * (1 - 2 * scale))
+	h = int(h * (1 - 2 * scale))
+	bh = image.shape[0]
+	bw = image.shape[1]
+	ret = np.zeros(image.shape[:2],np.uint8)
+
+	ret[0:bh,0:bw] = cv2.GC_PR_FGD
+	ret[y:y+h,x:x+w] = cv2.GC_FGD
+	ret[y+h:bh,x+w/2-pad*2:x+w/2+pad*2] = cv2.GC_FGD
+	ret[bh-4*pad:bh,x/2:(x+w+bw)/2] = cv2.GC_FGD
+	for i in range(0,bh):
+		for j in range(0,bw):
+			if compare(image[i][j],[0,0,0]):
+				ret[i][j] = cv2.GC_BGD
+			if compare(image[i][j],[0,0,255]):
+				ret[i][j] = cv2.GC_PR_BGD
+	return  ret
+
 def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	if color_id == 0:
 		color = (255,255,255)
@@ -24,6 +64,7 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 		minSize=(30, 30),
 		flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 	)
+	
 	print "Found {0} faces!".format(len(faces))
 	name_list = []
 	count = 0
@@ -52,17 +93,21 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 		new_h = bottom - top
 
 		rectf = (new_x,new_y,new_w,new_h)
-
-		mask = np.zeros(image.shape[:2],np.uint8)
+	
+		mask_img_read = cv2.imread("./mask.bmp")
+		mask_img = cv2.resize(mask_img_read,(image.shape[1],image.shape[0]))
+		mask = drawMark(mask_img,(x,y,w,h))
+#		show(mask)
+#		cv2.imwrite("mask.jpg",mask)
 
 		bgdModel = np.zeros((1,65),np.float64)
 		fgdModel = np.zeros((1,65),np.float64)      
 
-		cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_RECT)    
+		cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
 
 		bg = np.zeros(image.shape,np.uint8)
-		mask2 = np.where((mask == 2)|(mask==0),0,1).astype('uint8')
-		mask3 = np.where((mask != 2)|(mask==0),0,1).astype('uint8')
+		mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
+		mask3 = np.where(((mask == 2)|(mask==0)),1,0).astype('uint8')
 		bg[:,:] = color
 		bg = bg * mask3[:,:,np.newaxis]
 		img = image*mask2[:,:,np.newaxis]
