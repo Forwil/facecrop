@@ -25,9 +25,9 @@ def getMax(faces):
 	maxv = 0
 	ret = None
 	for (x,y,w,h) in faces:
-		if w > maxv:
+		if w * h > maxv:
 			ret = (x,y,w,h)
-			minv = w	
+			maxv = w * h
 	return ret
 
 def drawMark(image,rectf):
