@@ -21,6 +21,15 @@ def show(mask):
 def compare(a,b):
 	return a[0] == b[0] and a[1] == b[1] and a[2] == b[2]
 
+def getMax(faces):
+	maxv = 0
+	ret = None
+	for (x,y,w,h) in faces:
+		if w > maxv:
+			ret = (x,y,w,h)
+			minv = w	
+	return ret
+
 def drawMark(image,rectf):
 	x,y,w,h = rectf	
 	pad = image.shape[1] / 50
@@ -75,63 +84,64 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	width = image.shape[1]
 	if len(faces) == 0:
 		return []
-	for (x, y, w, h) in faces[:1]:
-		count += 1
 
-		new_x = int(x + 0.5 * w - 0.975 * h * scale)
-		new_y = int(y - 0.6 * h)
-		new_w = int(1.95 * h * scale)
-		new_h = int(1.95 * h)
+	(x,y,w,h) = getMax(faces)
+	count += 1
 
-		left = max(0,new_x)
-		top = max(0,new_y)	
-		right = min(new_x + new_w, width - 1)
-		bottom = min(new_y + new_h, height - 1)
+	new_x = int(x + 0.5 * w - 0.975 * h * scale)
+	new_y = int(y - 0.6 * h)
+	new_w = int(1.95 * h * scale)
+	new_h = int(1.95 * h)
 
-		new_x = left
-		new_y = top
-		new_w = right - left
-		new_h = bottom - top
+	left = max(0,new_x)
+	top = max(0,new_y)	
+	right = min(new_x + new_w, width - 1)
+	bottom = min(new_y + new_h, height - 1)
 
-		rectf = (new_x,new_y,new_w,new_h)
-		print "init mask" + str(time.time())	
-		mask_img_read = cv2.imread("./mask.bmp")
-		print "read mask done" + str(time.time())	
-		mask_img = cv2.resize(mask_img_read,(image.shape[1],image.shape[0]))
-		print "resize mask done" + str(time.time())	
-		mask = drawMark(mask_img,(x,y,w,h))
-		print "init mask done" + str(time.time())	
+	new_x = left
+	new_y = top
+	new_w = right - left
+	new_h = bottom - top
+
+	rectf = (new_x,new_y,new_w,new_h)
+	print "init mask" + str(time.time())	
+	mask_img_read = cv2.imread("./mask.bmp")
+	print "read mask done" + str(time.time())	
+	mask_img = cv2.resize(mask_img_read,(image.shape[1],image.shape[0]))
+	print "resize mask done" + str(time.time())	
+	mask = drawMark(mask_img,(x,y,w,h))
+	print "init mask done" + str(time.time())	
 #		show(mask)
 #		cv2.imwrite("mask.jpg",mask)
 
-		bgdModel = np.zeros((1,65),np.float64)
-		fgdModel = np.zeros((1,65),np.float64)      
+	bgdModel = np.zeros((1,65),np.float64)
+	fgdModel = np.zeros((1,65),np.float64)      
 
-		print "start cut" + str(time.time())	
-		cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
-		print "end cut" + str(time.time())	
+	print "start cut" + str(time.time())	
+	cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
+	print "end cut" + str(time.time())	
 
-		bg = np.zeros(image.shape,np.uint8)
-		mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
-		mask3 = np.where(((mask == 2)|(mask==0)),1,0).astype('uint8')
-		bg[:,:] = color
-		bg = bg * mask3[:,:,np.newaxis]
-		img = image*mask2[:,:,np.newaxis]
-		img = img + bg
+	bg = np.zeros(image.shape,np.uint8)
+	mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
+	mask3 = np.where(((mask == 2)|(mask==0)),1,0).astype('uint8')
+	bg[:,:] = color
+	bg = bg * mask3[:,:,np.newaxis]
+	img = image*mask2[:,:,np.newaxis]
+	img = img + bg
 
-		img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
-		img3 = cv2.resize(img2,(hei,wid))
+	img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
+	img3 = cv2.resize(img2,(hei,wid))
 #		kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
 #		img3 = cv2.dilate(img3,kernel)
-		img3 = cv2.medianBlur(img3,3)
-		img4 = join(img3,rotate)
-		file_name = filedir + "/out_" + str(count) + "_" + str(time.time()) + name
-		cv2.imwrite(file_name,img4)
-		name_list.append(file_name)
-		file_name = filedir + "/out_" + str(count) + "_single_" + name
-		cv2.imwrite(file_name,img3)
-		name_list.append(file_name)
-		print "end all" + str(time.time())	
+	img3 = cv2.medianBlur(img3,3)
+	img4 = join(img3,rotate)
+	file_name = filedir + "/out_" + str(count) + "_" + str(time.time()) + name
+	cv2.imwrite(file_name,img4)
+	name_list.append(file_name)
+	file_name = filedir + "/out_" + str(count) + "_single_" + name
+	cv2.imwrite(file_name,img3)
+	name_list.append(file_name)
+	print "end all" + str(time.time())	
 
 	return name_list
 
