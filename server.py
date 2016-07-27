@@ -2,6 +2,7 @@ import web
 import cv2
 import face
 import json
+import hashlib
 
 urls = ('/upload', 'Upload')
 urls = ('/', 'Upload')
@@ -27,6 +28,13 @@ class Upload:
         if 'myfile' in x: # to check if the file-object is created
             filepath = x.myfile.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename = filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
+            print filename
+            ext = filename.split(".")[-1]
+            print ext
+            m = hashlib.md5()
+            m.update(filename)
+            filename = m.hexdigest() + "." + ext
+            print filename
             try:
                 fout = open(filedir +'/'+ filename,'wb') # creates the file where the uploaded file should be stored
             except:

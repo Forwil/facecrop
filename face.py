@@ -77,7 +77,6 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 
 	print "Found {0} faces!".format(len(faces))
 	name_list = []
-	count = 0
 	print faces
 	print image.shape
 	height = image.shape[0]
@@ -86,7 +85,6 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 		return []
 
 	(x,y,w,h) = getMax(faces)
-	count += 1
 
 	new_x = int(x + 0.5 * w - 0.975 * h * scale)
 	new_y = int(y - 0.6 * h)
@@ -135,10 +133,10 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 #		img3 = cv2.dilate(img3,kernel)
 	img3 = cv2.medianBlur(img3,3)
 	img4 = join(img3,rotate)
-	file_name = filedir + "/out_" + str(count) + "_" + str(time.time()) + name
+	file_name = filedir + "/out_" + str(time.time())+"_" + name
 	cv2.imwrite(file_name,img4)
 	name_list.append(file_name)
-	file_name = filedir + "/out_" + str(count) + "_single_" + name
+	file_name = filedir + "/out_" + str(time.time())+ "_single_" + name
 	cv2.imwrite(file_name,img3)
 	name_list.append(file_name)
 	print "end all" + str(time.time())	
