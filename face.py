@@ -111,13 +111,15 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	print "init mask done" + str(time.time())	
 #		show(mask)
 #		cv2.imwrite("mask.jpg",mask)
-
 	bgdModel = np.zeros((1,65),np.float64)
 	fgdModel = np.zeros((1,65),np.float64)      
 
 	print "start cut" + str(time.time())	
 	cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
 	print "end cut" + str(time.time())	
+	kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
+	mask = cv2.erode(mask,kernel)
+	mask = cv2.medianBlur(mask,9)
 
 	bg = np.zeros(image.shape,np.uint8)
 	mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
