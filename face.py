@@ -33,7 +33,7 @@ def getMax(faces):
 def drawMark(image,rectf):
 	x,y,w,h = rectf	
 	pad = image.shape[1] / 50
-	scale = 1.0 / 8
+	scale = 1.0 / 4
 	x = x + int(w * scale)
 	y = y + int(h * scale)
 	w = int(w * (1 - 2 * scale))
@@ -65,6 +65,13 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	cascPath = "./arg.xml"
 	faceCascade = cv2.CascadeClassifier(cascPath)
 	image = cv2.imread(imagePath)
+
+	if image.shape[1] > 1000:
+		scalar = 1000.0 / image.shape[1]	
+		h = int(image.shape[1] * scalar)
+		w = int(image.shape[0] * scalar)
+		image = cv2.resize(image,(h,w))
+
 	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 	scale = hei * 1.0 / wid
 	faces = faceCascade.detectMultiScale(
@@ -96,12 +103,15 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	right = min(new_x + new_w, width - 1)
 	bottom = min(new_y + new_h, height - 1)
 
-	new_x = left
-	new_y = top
-	new_w = right - left
-	new_h = bottom - top
+	image = image[top:bottom,left:right]
+	image = cv2.resize(image,(hei,wid))
+	scalar = wid * 1.0 / new_h
+	x *= scalar
+	y *= scalar
+	w *= scalar
+	h *= scalar
+	print (x,y,w,h)
 
-	rectf = (new_x,new_y,new_w,new_h)
 	print "init mask" + str(time.time())	
 	mask_img_read = cv2.imread("./mask.bmp")
 	print "read mask done" + str(time.time())	
@@ -115,7 +125,7 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	fgdModel = np.zeros((1,65),np.float64)      
 
 	print "start cut" + str(time.time())	
-	cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
+	cv2.grabCut(image,mask,None,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
 	print "end cut" + str(time.time())	
 	kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
 	mask = cv2.erode(mask,kernel)
@@ -129,8 +139,10 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	img = image*mask2[:,:,np.newaxis]
 	img = img + bg
 
-	img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
-	img3 = cv2.resize(img2,(hei,wid))
+#	img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
+	img2 = img
+#	img3 = cv2.resize(img2,(hei,wid))
+	img3 = img2
 #		kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
 #		img3 = cv2.dilate(img3,kernel)
 	img3 = cv2.medianBlur(img3,3)
