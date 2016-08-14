@@ -5,18 +5,19 @@ import time
 
 filedir = './static'
 
-
 def show(mask):
+	ret = np.zeros(mask.shape[:2],np.uint8)
 	for i in range(0,mask.shape[0]):
 		for j in range(0,mask.shape[1]):
 			if mask[i][j] == cv2.GC_PR_FGD:
-				mask[i][j] = 200
+				ret[i][j] = 200
 			if mask[i][j] == cv2.GC_FGD:
-				mask[i][j] = 255
+				ret[i][j] = 255
 			if mask[i][j] == cv2.GC_PR_BGD:
-				mask[i][j] = 100
+				ret[i][j] = 100
 			if mask[i][j] == cv2.GC_BGD:
-				mask[i][j] = 0
+				ret[i][j] = 0
+	return ret
 
 def compare(a,b):
 	return a[0] == b[0] and a[1] == b[1] and a[2] == b[2]
@@ -30,7 +31,23 @@ def getMax(faces):
 			maxv = w * h
 	return ret
 
-def drawMark(image,rectf):
+def drawMark(init,image,rectf):
+	x,y,w,h = rectf	
+	bh = image.shape[0]
+	bw = image.shape[1]
+	ret = init
+
+	for i in range(0,bh):
+		for j in range(0,bw):
+			if compare(image[i][j],[0,0,0]):
+				ret[i][j] = cv2.GC_BGD
+			if compare(image[i][j],[0,0,255]):
+				ret[i][j] = cv2.GC_FGD
+			if compare(image[i][j],[255,0,0]):
+				ret[i][j] = cv2.GC_PR_FGD
+	return  ret
+
+def drawMark2(image,rectf):
 	x,y,w,h = rectf	
 	pad = image.shape[1] / 50
 	scale = 1.0 / 4
@@ -40,19 +57,14 @@ def drawMark(image,rectf):
 	h = int(h * (1 - 2 * scale))
 	bh = image.shape[0]
 	bw = image.shape[1]
-	ret = np.zeros(image.shape[:2],np.uint8)
+	ret = image
 
-	ret[0:bh,0:bw] = cv2.GC_PR_FGD
 	ret[y:y+h,x:x+w] = cv2.GC_FGD
 	ret[y+h:bh,x+w/2-pad*2:x+w/2+pad*2] = cv2.GC_FGD
 	ret[bh-4*pad:bh,x/2:(x+w+bw)/2] = cv2.GC_FGD
-	for i in range(0,bh):
-		for j in range(0,bw):
-			if compare(image[i][j],[0,0,0]):
-				ret[i][j] = cv2.GC_BGD
-			if compare(image[i][j],[0,0,255]):
-				ret[i][j] = cv2.GC_PR_BGD
 	return  ret
+
+
 
 def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	if color_id == 0:
@@ -100,36 +112,61 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 
 	left = max(0,new_x)
 	top = max(0,new_y)	
-	right = min(new_x + new_w, width - 1)
-	bottom = min(new_y + new_h, height - 1)
+	right = min(left + new_w, width - 1)
+	bottom = min(top + new_h, height - 1)
+	
+	new_x = left
+	new_y = top
+	new_w = right - left
+	new_h = bottom - top
+
+	if new_w > new_h * scale:
+		new_w = new_h * scale
+	if new_h > new_w / scale:
+		new_h = new_w / scale
+	
+	right = new_x + new_w
+	bottom = new_y + new_h	
 
 	image = image[top:bottom,left:right]
 	image = cv2.resize(image,(hei,wid))
 	scalar = wid * 1.0 / new_h
+	x -= left
+	y -= top
 	x *= scalar
 	y *= scalar
 	w *= scalar
 	h *= scalar
 	print (x,y,w,h)
 
+	rectf = (0,0,image.shape[1]-1,image.shape[0]-1)
+	mask = np.zeros(image.shape[:2],np.uint8)
+	bgdModel = np.zeros((1,65),np.float64)
+	fgdModel = np.zeros((1,65),np.float64)      
+
+	cv2.grabCut(image,mask,rectf,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_RECT)    
+
 	print "init mask" + str(time.time())	
 	mask_img_read = cv2.imread("./mask.bmp")
 	print "read mask done" + str(time.time())	
 	mask_img = cv2.resize(mask_img_read,(image.shape[1],image.shape[0]))
 	print "resize mask done" + str(time.time())	
-	mask = drawMark(mask_img,(x,y,w,h))
+	mask = drawMark(mask,mask_img,(x,y,w,h))
 	print "init mask done" + str(time.time())	
-#		show(mask)
-#		cv2.imwrite("mask.jpg",mask)
+	out = show(mask)
+	cv2.imwrite("mask.jpg",out)
 	bgdModel = np.zeros((1,65),np.float64)
 	fgdModel = np.zeros((1,65),np.float64)      
 
 	print "start cut" + str(time.time())	
-	cv2.grabCut(image,mask,None,bgdModel,fgdModel,3,cv2.GC_INIT_WITH_MASK)    
+#	rectf = (int(x),int(y),int(w),int(h))
+#	mask = drawMark2(mask,(x,y,w,h))
+	cv2.grabCut(image,mask,None,bgdModel,fgdModel,10,cv2.GC_INIT_WITH_MASK)    
 	print "end cut" + str(time.time())	
-	kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
-	mask = cv2.erode(mask,kernel)
-	mask = cv2.medianBlur(mask,9)
+#	kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
+#	mask = cv2.erode(mask,kernel)
+#	mask = cv2.dilate(mask,kernel)
+#	mask = cv2.medianBlur(mask,9)
 
 	bg = np.zeros(image.shape,np.uint8)
 	mask2 = np.where(((mask == 2)|(mask==0)),0,1).astype('uint8')
@@ -140,18 +177,16 @@ def getMark(name,wid = 413,hei = 295 ,color_id = 2,rotate = 0):
 	img = img + bg
 
 #	img2 = img[new_y:new_y+new_h,new_x:new_x+new_w]
-	img2 = img
 #	img3 = cv2.resize(img2,(hei,wid))
-	img3 = img2
 #		kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)) 
 #		img3 = cv2.dilate(img3,kernel)
-	img3 = cv2.medianBlur(img3,3)
-	img4 = join(img3,rotate)
+#	img3 = cv2.medianBlur(img3,3)
+	img4 = join(img,rotate)
 	file_name = filedir + "/out_" + str(time.time())+"_" + name
 	cv2.imwrite(file_name,img4)
 	name_list.append(file_name)
 	file_name = filedir + "/out_" + str(time.time())+ "_single_" + name
-	cv2.imwrite(file_name,img3)
+	cv2.imwrite(file_name,img)
 	name_list.append(file_name)
 	print "end all" + str(time.time())	
 
